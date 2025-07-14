@@ -5,7 +5,7 @@ function Home() {
   
   return (
     <div>
-      this is a home page
+      this is a home page. Hiiii
     </div>
   )
 }
