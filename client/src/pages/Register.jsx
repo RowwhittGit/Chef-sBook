@@ -1,15 +1,20 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    password: '',
     username: '',
-    profilePicture: null,         // for preview
-    profilePictureFile: null,     // actual file
+    password: '',
+    password2: '',
+    address: '',
+    dob: '',
+    profilePicture: null,
+    profilePictureFile: null,
   });
 
   const fileInputRef = useRef();
@@ -21,8 +26,8 @@ function Register() {
       const file = files[0];
       setFormData(prev => ({
         ...prev,
-        profilePicture: URL.createObjectURL(file),   // preview
-        profilePictureFile: file,                    // actual file
+        profilePicture: URL.createObjectURL(file),
+        profilePictureFile: file,
       }));
     } else {
       setFormData(prev => ({
@@ -35,15 +40,23 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (formData.password !== formData.password2) {
+      alert('Passwords do not match.');
+      return;
+    }
+
     const data = new FormData();
     data.append('email', formData.email);
     data.append('password', formData.password);
-    data.append('username', formData.username);
+    data.append('password2', formData.password2);
     data.append('first_name', formData.firstName);
     data.append('last_name', formData.lastName);
+    data.append('address', formData.address);
 
+    if (formData.username) data.append('username', formData.username);
+    if (formData.dob) data.append('dob', formData.dob);
     if (formData.profilePictureFile) {
-      data.append('profile_picture', formData.profilePictureFile);
+      data.append('image', formData.profilePictureFile);
     }
 
     try {
@@ -56,8 +69,8 @@ function Register() {
       alert('Registration successful!');
       console.log(res.data);
     } catch (error) {
-      console.error(error);
-      alert('Registration failed!');
+      console.error(error.response?.data || error.message);
+      alert('Registration failed! Check console for details.');
     }
   };
 
@@ -66,7 +79,7 @@ function Register() {
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-3xl font-semibold text-green-900 mb-6 text-center">Create an Account</h2>
 
-        {/* Profile Picture Upload */}
+        {/* Profile Picture Upload (Optional) */}
         <div className="flex justify-center mb-6">
           <div
             className="w-28 h-28 rounded-full border-4 border-green-500 overflow-hidden cursor-pointer shadow-md"
@@ -119,10 +132,9 @@ function Register() {
           <input
             type="text"
             name="username"
-            placeholder="Username"
+            placeholder="Username (optional)"
             value={formData.username}
             onChange={handleChange}
-            required
             className="w-full px-4 py-3 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
           />
 
@@ -137,10 +149,39 @@ function Register() {
           />
 
           <input
+            type="text"
+            name="address"
+            placeholder="Address"
+            value={formData.address}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+
+          <input
+            type="date"
+            name="dob"
+            placeholder="Date of Birth (optional)"
+            value={formData.dob}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border border-green-300 rounded-md text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+
+          <input
             type="password"
             name="password"
             placeholder="Password"
             value={formData.password}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+
+          <input
+            type="password"
+            name="password2"
+            placeholder="Confirm Password"
+            value={formData.password2}
             onChange={handleChange}
             required
             className="w-full px-4 py-3 border border-green-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -151,6 +192,13 @@ function Register() {
             className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-md shadow-md transition"
           >
             Register
+          </button>
+          <button
+            type="button"
+            className="w-full mt-2 bg-green-100 hover:bg-green-200 text-green-700 font-semibold py-3 rounded-md shadow-md transition"
+            onClick={() => navigate('/login')}
+          >
+            Login
           </button>
         </form>
       </div>

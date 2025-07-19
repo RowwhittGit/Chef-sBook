@@ -44,14 +44,14 @@ function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-200 via-green-300 to-green-400 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-slate-200 rounded-lg shadow-lg p-8">
         <h2 className="text-3xl font-semibold text-green-900 mb-6 text-center">Your Profile</h2>
 
         <div className="flex flex-col items-center space-y-4">
           <div className="w-28 h-28 rounded-full border-4 border-green-500 overflow-hidden shadow-md">
-            {user.profile_picture ? (
+            {user.image ? (
               <img
-              src={user.profile_picture}
+              src={user.image}
               alt="Profile"
               className="object-cover w-full h-full"
             />
