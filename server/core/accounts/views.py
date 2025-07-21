@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import RegisterSerializer, ProfileSerializer
 
@@ -10,6 +10,14 @@ class LoginView(TokenObtainPairView):
 
 class ProfileView(generics.RetrieveAPIView):
     serializer_class = ProfileSerializer
-    
+    permission_classes = [permissions.IsAuthenticated]
+
     def get_object(self):
-        return self.request.user  # Automatically gets logged-in user
+        return self.request.user
+
+class UpdateProfileView(generics.UpdateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

@@ -6,5 +6,6 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('accounts.urls')),  # All auth routes now under /api/auth/
+    path('api/auth/', include('accounts.urls')),
+    path('api/recipe/', include('Recipe.urls')),  # All auth routes now under /api/auth/
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

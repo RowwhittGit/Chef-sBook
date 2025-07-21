@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../stores/authStore';
 
 function Login() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
   const navigate = useNavigate();
+  const setTokens = useAuthStore((state) => state.setTokens);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -26,8 +29,9 @@ function Login() {
       });
 
       const { access, refresh } = res.data;
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
+
+      // Store tokens in Zustand
+      setTokens({ access, refresh });
 
       alert('Login successful!');
       navigate('/profile');
