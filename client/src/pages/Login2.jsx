@@ -3,9 +3,10 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
 
+
 function Login2() {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: '',
   });
 
@@ -24,7 +25,7 @@ function Login2() {
 
     try {
       const res = await axios.post('http://127.0.0.1:8000/api/auth/login/', {
-        email: formData.email,
+        username: formData.username,
         password: formData.password,
       });
 
@@ -51,14 +52,15 @@ function Login2() {
         <h2 className="text-xl font-semibold text-center mb-2">Sign In</h2>
         <p className="text-sm text-gray-600 text-center mb-6">Continue your cooking adventure</p>
 
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm mb-1 text-gray-700">Email Address</label>
+            <label className="block text-sm mb-1 text-gray-700">Username</label>
             <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
+              type="text"
+              name="username"
+              placeholder="Enter your username"
+              value={formData.username}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400"

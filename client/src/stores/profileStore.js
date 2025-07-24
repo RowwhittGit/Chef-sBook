@@ -20,15 +20,27 @@ const useProfileStore = create(
         set({ loading: true, error: null });
 
         try {
-          const res = await axios.get('http://127.0.0.1:8000/api/auth/profile/', {
+          const res = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
           set({ user: res.data, loading: false });
         } catch (err) {
+          let errorMsg = 'Failed to fetch profile.';
+          if (err.response) {
+            if (err.response.status === 401 || err.response.status === 403) {
+              errorMsg = 'Session expired or unauthorized. Please log in again.';
+              useAuthStore.getState().setTokens({ access: null, refresh: null });
+              set({ user: null });
+            } else if (err.response.data && err.response.data.detail) {
+              errorMsg = err.response.data.detail;
+            }
+          } else if (err.message) {
+            errorMsg = err.message;
+          }
           console.error('Fetch profile failed:', err);
-          set({ error: 'Failed to fetch profile.', loading: false });
+          set({ error: errorMsg, loading: false });
         }
       },
 
@@ -57,8 +69,14 @@ const useProfileStore = create(
           alert('Profile updated!');
           await get().fetchProfile(); // refetch updated profile
         } catch (err) {
+          let errorMsg = 'Update failed!';
+          if (err.response && err.response.data && err.response.data.detail) {
+            errorMsg = err.response.data.detail;
+          } else if (err.message) {
+            errorMsg = err.message;
+          }
           console.error('Update profile failed:', err);
-          alert('Update failed!');
+          alert(errorMsg);
         }
       },
 

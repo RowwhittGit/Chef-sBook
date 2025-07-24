@@ -2,8 +2,11 @@ import React from 'react';
 import { PiMessengerLogoBold } from "react-icons/pi";
 import { IoNotificationsOutline } from "react-icons/io5";
 import useProfileStore from '../stores/profileStore';
+import { MdOutlineAddToPhotos } from "react-icons/md";
+import { useNavigate } from 'react-router-dom';
 
 function Header() {
+  const navigate = useNavigate()
   const { user } = useProfileStore();
   // Fallbacks for demo
   const profileImg = user?.image
@@ -13,7 +16,7 @@ function Header() {
   return (
     <div className="flex justify-between items-center bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 py-3 px-10 lg:px-20">
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-4 border-white shadow-lg flex items-center justify-center bg-gray-100">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-4 border-white shadow-lg flex items-center justify-center bg-gray-100 cursor-pointer" onClick={() => navigate("/profile")} >
           <img
             className="w-full h-full object-cover rounded-full"
             src={profileImg}
@@ -31,16 +34,29 @@ function Header() {
         <p className="text-gray-600 text-lg">Start your culinary journey</p>
       </div>
 
-      <div className='flex gap-2 sm:gap-5'> 
-        <div className="w-16 h-16 flex items-center justify-center mr-2 mt-2 bg-white shadow-2xl rounded-full relative">
-          <IoNotificationsOutline className="w-10 h-10" style={{ fontSize: '3rem' }} />
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm font-bold rounded-full px-3 py-1 shadow-lg border-2 border-white flex items-center justify-center" style={{ minWidth: '2rem', height: '2rem', textAlign: 'center' }}>3</span>
+      <div className='flex gap-4 sm:gap-6 items-center mt-2'>
+
+
+        {/* Plus Icon with Tooltip */}
+        <div className="w-16 h-16 flex items-center justify-center bg-white hover:bg-gray-100 shadow-2xl rounded-full relative cursor-pointer group" onClick={() => navigate("/create")} >
+          <MdOutlineAddToPhotos className="w-10 h-10" style={{ fontSize: '3rem' }} />
+          <div className="absolute left-1/2 -bottom-9 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap transition-opacity duration-200 z-20">Create</div>
         </div>
 
-        <div className="w-16 h-16 flex items-center justify-center mr-5 mt-2 bg-white shadow-2xl rounded-full relative">
+        {/* Notification Icon with Tooltip */}
+        <div className="w-16 h-16 flex items-center justify-center bg-white hover:bg-gray-100 shadow-2xl rounded-full relative cursor-pointer group" onClick={() => navigate("/notifications")} >
+          <IoNotificationsOutline className="w-10 h-10" style={{ fontSize: '3rem' }} />
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm font-bold rounded-full px-3 py-1 shadow-lg border-2 border-white flex items-center justify-center" style={{ minWidth: '2rem', height: '2rem', textAlign: 'center' }}>3</span>
+          <div className="absolute left-1/2 -bottom-9 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap transition-opacity duration-200 z-20">Notifications</div>
+        </div>
+
+        {/* Messenger Icon with Tooltip */}
+        <div className="w-16 h-16 flex items-center justify-center bg-white hover:bg-gray-100 shadow-2xl rounded-full relative cursor-pointer group" onClick={() => navigate("/chat")} >
           <PiMessengerLogoBold className="w-10 h-10" style={{ fontSize: '3rem' }} />
           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-sm font-bold rounded-full px-3 py-1 shadow-lg border-2 border-white flex items-center justify-center" style={{ minWidth: '2rem', height: '2rem', textAlign: 'center' }}>6</span>
+          <div className="absolute left-1/2 -bottom-9 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap transition-opacity duration-200 z-20">Messages</div>
         </div>
+
       </div>
     </div>
   );
