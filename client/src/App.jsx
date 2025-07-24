@@ -6,14 +6,16 @@ import Login from './pages/Login'
 import Profile from './pages/Profile'
 import Profile2 from './pages/Profile2'
 import ProfileEdit from './pages/ProfileEdit'
+import Login2 from './pages/Login2'
+import Register2 from './pages/Register2'
 
 export default function App() {
   return (
     <Routes>
-      <Route path='/register' element={<Register />} />
+      <Route path='/register' element={<Register2 />} />
       <Route path='/' element={<Home />} />
-      <Route path='/login' element={<Login />} />
-      <Route path='/Profile' element={<ProfileEdit />} />
+      <Route path='/login' element={<Login2 />} />
+      <Route path='/Profile' element={<Profile2 />} />
     </Routes>
   )
 }
