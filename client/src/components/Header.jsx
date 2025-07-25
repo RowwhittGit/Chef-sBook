@@ -1,7 +1,7 @@
 import React from 'react';
 import { PiMessengerLogoBold } from "react-icons/pi";
 import { IoNotificationsOutline } from "react-icons/io5";
-import useProfileStore from '../stores/profileStore';
+import useProfileStore from '../stores/ProfileStore';
 import { MdOutlineAddToPhotos } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
 
@@ -9,9 +9,9 @@ function Header() {
   const navigate = useNavigate()
   const { user } = useProfileStore();
   // Fallbacks for demo
-  const profileImg = user?.image
+  const profileImg = user?.profile_picture
   const username = user?.username || "rowwhitt_don";
-  const fullName = user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : "Rohit Tandukar";
+  const fullName = user?.full_name;
 
   return (
     <div className="flex justify-between items-center bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 py-3 px-10 lg:px-20">

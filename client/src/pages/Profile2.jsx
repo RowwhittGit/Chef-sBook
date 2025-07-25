@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import useProfileStore from '../stores/profileStore';
+import useProfileStore from '../stores/ProfileStore';
 import useAuthStore from '../stores/authStore';
 
 function Profile2() {

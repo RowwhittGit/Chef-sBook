@@ -11,38 +11,39 @@ const useProfileStore = create(
       error: null,
 
       fetchProfile: async () => {
-        const token = useAuthStore.getState().accessToken;
-        if (!token) {
-          set({ error: 'No access token found.', loading: false });
-          return;
-        }
+      const token = useAuthStore.getState().accessToken;
+      if (!token) {
+        set({ error: 'No access token found.', loading: false });
+        return;
+      }
 
-        set({ loading: true, error: null });
+      set({ loading: true, error: null });
 
-        try {
-          const res = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          set({ user: res.data, loading: false });
-        } catch (err) {
-          let errorMsg = 'Failed to fetch profile.';
-          if (err.response) {
-            if (err.response.status === 401 || err.response.status === 403) {
-              errorMsg = 'Session expired or unauthorized. Please log in again.';
-              useAuthStore.getState().setTokens({ access: null, refresh: null });
-              set({ user: null });
-            } else if (err.response.data && err.response.data.detail) {
-              errorMsg = err.response.data.detail;
-            }
-          } else if (err.message) {
-            errorMsg = err.message;
+      try {
+        const res = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        set({ user: res.data, loading: false });
+      } catch (err) {
+        let errorMsg = 'Failed to fetch profile.';
+        if (err.response) {
+          if (err.response.status === 401 || err.response.status === 403) {
+            errorMsg = 'Session expired or unauthorized. Please log in again.';
+            useAuthStore.getState().setTokens({ access: null, refresh: null });
+            set({ user: null });
+          } else if (err.response.data && err.response.data.detail) {
+            errorMsg = err.response.data.detail;
           }
-          console.error('Fetch profile failed:', err);
-          set({ error: errorMsg, loading: false });
+        } else if (err.message) {
+          errorMsg = err.message;
         }
-      },
+        console.error('Fetch profile failed:', err);
+        set({ error: errorMsg, loading: false });
+      }
+    },
+
 
       updateProfile: async (formData) => {
         const token = useAuthStore.getState().accessToken;

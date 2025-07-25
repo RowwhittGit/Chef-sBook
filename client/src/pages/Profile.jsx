@@ -37,17 +37,8 @@ function Profile() {
   const isPremium = user?.is_premium;
   const followers = user?.follower_count ?? 0;
   const following = user?.following_count ?? 0;
-  // Demo stats
   const totalRecipes = user?.total_recipes ?? 24;
-  const totalLikes = user?.total_likes ?? 5432;
-  const tags = user?.tags ?? [
-    'Italian Cuisine',
-    'Asian Fusion',
-    'Healthy Cooking',
-    'Desserts',
-    'Traditional Recipes',
-  ];
-  // Demo recipes
+  // Demo recipes (remove if you have real data)
   const recipes = [
     { id: 1, title: 'Spicy Szechuan Noodles', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836', status: 'published', difficulty: 'Medium' },
     { id: 2, title: 'Homemade Dumplings', img: 'https://images.unsplash.com/photo-1519864600265-abb224a0e99c', status: 'published', difficulty: 'Hard' },
@@ -78,9 +69,6 @@ function Profile() {
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-gray-900 mb-1">{username}</h2>
               <div className="text-lg text-gray-600 mb-1">{email}</div>
-              <div className="text-base text-gray-700 mb-2 flex items-center gap-2">
-                Passionate home chef sharing authentic recipes from around the world 🌏✨
-              </div>
               <div className="flex gap-8 mt-2">
                 <div className="text-center">
                   <div className="text-xl font-bold text-red-600">{totalRecipes}</div>
@@ -94,10 +82,7 @@ function Profile() {
                   <div className="text-xl font-bold text-red-600">{following}</div>
                   <div className="text-xs text-gray-500">Following</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-red-600">{totalLikes}</div>
-                  <div className="text-xs text-gray-500">Total Likes</div>
-                </div>
+                {/* Removed Total Likes */}
               </div>
               <div className="flex gap-2 mt-4">
                 <button className="bg-red-600 hover:bg-red-700 text-white font-semibold px-5 py-2 rounded-md shadow transition">Edit Profile</button>
@@ -106,22 +91,15 @@ function Profile() {
               </div>
             </div>
           </div>
-          <div className="w-full flex flex-wrap gap-2 mt-6 mb-2">
-            {tags.map((tag, idx) => (
-              <span key={idx} className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-red-400 mr-1"></span>{tag}
-              </span>
-            ))}
-          </div>
+          {/* Removed tags section as tags is not defined in user data */}
         </div>
         <div className="mt-6 bg-white rounded-xl shadow flex items-center px-4 py-2 gap-4">
           <button className="bg-red-600 text-white font-semibold px-4 py-2 rounded-md shadow mr-2 flex items-center gap-2">
-            <span className="material-icons">restaurant</span> My Recipes <span className="ml-2 bg-white text-red-600 rounded-full px-2 text-xs font-bold">{totalRecipes}</span>
+             My Recipes <span className="ml-2 bg-white text-red-600 rounded-full px-2 text-xs font-bold">{totalRecipes}</span>
           </button>
           <button className="text-gray-600 font-semibold px-2 py-2 rounded-md">Saved <span className="ml-1 text-gray-400">12</span></button>
           <button className="text-gray-600 font-semibold px-2 py-2 rounded-md">Following <span className="ml-1 text-gray-400">{following}</span></button>
           <button className="text-gray-600 font-semibold px-2 py-2 rounded-md">Followers <span className="ml-1 text-gray-400">{followers}</span></button>
-          <button className="ml-auto bg-red-600 text-white font-semibold px-4 py-2 rounded-md shadow flex items-center gap-2">+ Add Recipe</button>
         </div>
         <div className="mt-4 flex gap-2">
           <button className="bg-red-100 text-red-600 font-semibold px-4 py-1 rounded-full">All ({recipes.length})</button>

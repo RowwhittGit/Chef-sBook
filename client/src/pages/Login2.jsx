@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
-
+import useProfileStore from '../stores/ProfileStore';
 
 function Login2() {
   const [formData, setFormData] = useState({
@@ -12,6 +12,7 @@ function Login2() {
 
   const navigate = useNavigate();
   const setTokens = useAuthStore((state) => state.setTokens);
+  const fetchProfile = useProfileStore((state) => state.fetchProfile); // ✅ Get fetchProfile
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -31,7 +32,12 @@ function Login2() {
 
       const { access, refresh } = res.data;
 
+      // ✅ Store tokens
       setTokens({ access, refresh });
+
+      // ✅ Fetch the profile
+      await fetchProfile();
+
       alert('Login successful!');
       navigate('/profile');
     } catch (err) {
@@ -41,7 +47,7 @@ function Login2() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#fff1eb] from- px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#fff1eb] px-4">
       <h1 className="text-3xl font-bold mb-2">
         <span className="text-[#f44336]">Chef's</span>
         <span className="text-[#f44336]">Book</span>
@@ -51,7 +57,6 @@ function Login2() {
       <div className="bg-white rounded-xl max-w-md w-full p-8 ">
         <h2 className="text-xl font-semibold text-center mb-2">Sign In</h2>
         <p className="text-sm text-gray-600 text-center mb-6">Continue your cooking adventure</p>
-
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -79,7 +84,6 @@ function Login2() {
               className="w-full px-4 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-400"
             />
           </div>
-
 
           <button
             type="submit"
