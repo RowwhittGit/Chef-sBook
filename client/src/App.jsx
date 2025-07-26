@@ -10,6 +10,7 @@ import Msg from './pages/Msg'
 import Notifications from './pages/Notifications'
 import ViewPost from './pages/ViewPost' 
 import ViewPost2 from './pages/ViewPost2'
+import ProfileEdit from './pages/ProfileEdit'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
       <Route path='/chat' element={<Msg />} />
       <Route path='/post/:id' element={<ViewPost />} /> 
       <Route path='/viewpost' element={<ViewPost2 />} />
+      <Route path='/edit_profile' element={<ProfileEdit />} />
     </Routes>
     
   )
