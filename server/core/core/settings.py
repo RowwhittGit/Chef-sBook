@@ -41,19 +41,31 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',    
+    'channels',
+    'django_filters',
     'accounts',
-    'Recipe'
+    'posts',
+    'comments',
+    'likes',
+    'ratings',
+    'chat',
+    'notifications',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=10),
 }
 
 MIDDLEWARE = [
@@ -85,7 +97,7 @@ TEMPLATES = [
     },
 ]
 
-AUTH_USER_MODEL = 'accounts.Account'
+AUTH_USER_MODEL = 'accounts.User'
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
@@ -103,8 +115,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Chefsbook',
-        'USER': 'postgres',
+        'NAME': 'chefbook',
+        'USER': 'django',
         'PASSWORD': 'root',
         'HOST': 'localhost',
         'PORT': '5432',
@@ -161,3 +173,21 @@ CORS_ALLOW_CREDENTIALS = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+ASGI_APPLICATION = 'core.core.asgi.application'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' #for showing in console
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' #to send actual emails
+EMAIL_HOST = 'smtp.gmail.com'  # Use your email provider's SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'yourgmail'        # Your full Gmail address
+EMAIL_HOST_PASSWORD = 'apppasswordhere'  # App password, not your Gmail password
+DEFAULT_FROM_EMAIL = 'yourgmail'
