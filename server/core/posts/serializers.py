@@ -20,14 +20,21 @@ class PostUserSerializer(serializers.ModelSerializer):
 
 class PostSerializer(serializers.ModelSerializer):
     user = PostUserSerializer(read_only=True)
-    category = serializers.PrimaryKeyRelatedField(queryset=PostCategory.objects.all())
+    category = PostCategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=PostCategory.objects.all(), 
+        source='category', 
+        write_only=True,
+        allow_null=True,
+        required=False
+    )
     likes = LikeSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = [f.name for f in Post._meta.get_fields() if not f.is_relation or f.one_to_one or (f.many_to_one and f.related_model)] + ['likes', 'comments', 'average_rating']
+        fields = [f.name for f in Post._meta.get_fields() if not f.is_relation or f.one_to_one or (f.many_to_one and f.related_model)] + ['likes', 'comments', 'average_rating', 'category_id']
         read_only_fields = ['user']
 
     def get_average_rating(self, obj):
