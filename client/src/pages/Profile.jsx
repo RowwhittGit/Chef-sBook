@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
-import useProfileStore from '../stores/ProfileStore';
+import useProfileStore from '../stores/profileStore';
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -27,7 +27,7 @@ function Profile() {
           },
         });
         setUser(res.data);
-        console.log(res.data)
+        // console.log(res.data)
       } catch (err) {
         setError('Failed to load profile.');
       } finally {
