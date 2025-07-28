@@ -3,7 +3,7 @@ import Header from '../components/Header';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
-import useProfileStore from '../stores/profileStore';
+import useProfileStore from '../stores/ProfileStore';
 
 function Profile() {
   const [user, setUser] = useState(null);

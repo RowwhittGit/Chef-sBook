@@ -7,7 +7,7 @@ import useCategoryStore from "../stores/categoryStore"
 import Filters from "../components/Filters"
 import RecipeCard from "../components/RecipeCard"
 import useAuthStore from "../stores/authStore"
-import useProfileStore from "../stores/profileStore"
+import useProfileStore from "../stores/ProfileStore"
 import ToastContainer from "../components/ToastContainer"
 
 function Home() {

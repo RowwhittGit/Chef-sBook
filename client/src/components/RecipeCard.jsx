@@ -9,7 +9,7 @@ import { RiShareForwardFill } from "react-icons/ri"
 import { MdReviews } from "react-icons/md"
 import { useNavigate } from "react-router-dom"
 import useAuthStore from "../stores/authStore"
-import useProfileStore from "../stores/profileStore"
+import useProfileStore from "../stores/ProfileStore"
 import useToastStore from "../stores/toastStore"
 
 const RecipeCard = ({ recipe, onRecipeUpdate, currentUser }) => {
@@ -523,7 +523,7 @@ const RecipeCard = ({ recipe, onRecipeUpdate, currentUser }) => {
               </span>
             )}
             {recipe.ingredients && (
-              <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-medium">Category</span>
+              <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-medium">{recipe.category?.name || 'Not mentioned'}</span>
             )}
           </div>
 
