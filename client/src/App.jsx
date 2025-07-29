@@ -23,7 +23,7 @@ export default function App() {
       <Route path='/notifications' element={<Notifications />} />
       <Route path='/chat' element={<Msg />} />
       <Route path='/post/:id' element={<ViewPost />} /> 
-      <Route path='/viewpost' element={<ViewPost2 />} />
+      {/* <Route path='/viewpost' element={<ViewPost2 />} /> */}
       <Route path='/edit_profile' element={<ProfileEdit />} />
     </Routes>
     
