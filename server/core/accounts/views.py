@@ -55,13 +55,11 @@ class GetMyInfoView(APIView):
         return Response(serializer.data)
     
 class UserDetailView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsUserOrAdmin]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
         user = get_object_or_404(User, pk=pk)
         
-        # Enforce object-level permissions
-        self.check_object_permissions(request, user)
         
         serializer = UserSerializer(user)
         return Response(serializer.data)
