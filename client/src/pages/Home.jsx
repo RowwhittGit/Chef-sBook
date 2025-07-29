@@ -21,11 +21,9 @@ function Home() {
     previous: null,
   })
 
-  // Get current user from profile store
   const { user: currentUser, fetchProfile } = useProfileStore()
   const accessToken = useAuthStore((state) => state.accessToken)
 
-  // Fetch user profile if we have a token but no user data
   useEffect(() => {
     if (accessToken && !currentUser) {
       fetchProfile()
@@ -37,26 +35,31 @@ function Home() {
       try {
         setLoading(true)
         setError(null)
-        const response = await axios.get("http://127.0.0.1:8000/api/posts/all/")
-        const data = response.data
 
-        console.log("API Response:", data) // Debug log
+        const [postsResponse, savedResponse] = await Promise.all([
+          axios.get("http://127.0.0.1:8000/api/posts/all/"),
+          accessToken
+            ? axios.get("http://127.0.0.1:8000/api/posts/saved/", {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              })
+            : Promise.resolve({ data: { results: [] } }),
+        ])
 
-        setRecipes(data.results)
-        // If you have an endpoint to check saved status, you can call it here
-        // For now, we'll assume the API returns is_saved field with each recipe
-        // If not, you might need to fetch saved recipes separately
+        const postData = postsResponse.data
+        const savedPostIds = savedResponse.data.results.map((entry) => entry.post.id)
 
-        setRecipes(
-          data.results.map((recipe) => ({
-            ...recipe,
-            is_saved: recipe.is_saved || false, // Ensure is_saved field exists
-          })),
-        )
+        const updatedRecipes = postData.results.map((recipe) => ({
+          ...recipe,
+          is_saved: savedPostIds.includes(recipe.id),
+        }))
+
+        setRecipes(updatedRecipes)
         setPagination({
-          count: data.count,
-          next: data.next,
-          previous: data.previous,
+          count: postData.count,
+          next: postData.next,
+          previous: postData.previous,
         })
       } catch (error) {
         console.error("Failed to fetch recipes:", error)
@@ -67,25 +70,44 @@ function Home() {
     }
 
     getData()
-  }, [selectedCategory])
+  }, [selectedCategory, accessToken])
 
   const handleRecipeUpdate = (updatedRecipe) => {
-    console.log("Updating recipe:", updatedRecipe) // Debug log
-    setRecipes((prevRecipes) => prevRecipes.map((recipe) => (recipe.id === updatedRecipe.id ? updatedRecipe : recipe)))
+    console.log("Updating recipe:", updatedRecipe)
+    setRecipes((prevRecipes) =>
+      prevRecipes.map((recipe) =>
+        recipe.id === updatedRecipe.id ? updatedRecipe : recipe
+      )
+    )
   }
 
   const loadMoreRecipes = async () => {
     if (!pagination.next) return
 
     try {
-      const response = await axios.get(pagination.next)
-      const data = response.data
+      const [nextPostsRes, savedResponse] = await Promise.all([
+        axios.get(pagination.next),
+        accessToken
+          ? axios.get("http://127.0.0.1:8000/api/posts/saved/", {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+          : Promise.resolve({ data: { results: [] } }),
+      ])
 
-      setRecipes((prevRecipes) => [...prevRecipes, ...data.results])
+      const savedPostIds = savedResponse.data.results.map((entry) => entry.post.id)
+
+      const newRecipes = nextPostsRes.data.results.map((recipe) => ({
+        ...recipe,
+        is_saved: savedPostIds.includes(recipe.id),
+      }))
+
+      setRecipes((prevRecipes) => [...prevRecipes, ...newRecipes])
       setPagination({
-        count: data.count,
-        next: data.next,
-        previous: data.previous,
+        count: nextPostsRes.data.count,
+        next: nextPostsRes.data.next,
+        previous: nextPostsRes.data.previous,
       })
     } catch (error) {
       console.error("Failed to load more recipes:", error)
@@ -130,7 +152,6 @@ function Home() {
       <Filters />
 
       <div className="max-w-full mx-auto mt-8">
-        {/* Recipe Stats */}
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Discover Amazing Recipes</h2>
           <p className="text-gray-600">
@@ -157,7 +178,6 @@ function Home() {
               ))}
             </div>
 
-            {/* Load More Button */}
             {pagination.next && (
               <div className="text-center mt-12">
                 <button

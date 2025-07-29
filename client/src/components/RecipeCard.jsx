@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "axios"
 import { CiBookmark, CiHeart } from "react-icons/ci"
 import { FaHeart, FaBookmark, FaStar } from "react-icons/fa"
@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom"
 import useAuthStore from "../stores/authStore"
 import useProfileStore from "../stores/ProfileStore"
 import useToastStore from "../stores/toastStore"
+import { SlUserFollow } from "react-icons/sl";
+import { SlUserUnfollow } from "react-icons/sl";
 
 const RecipeCard = ({ recipe, onRecipeUpdate, currentUser }) => {
   const accessToken = useAuthStore((state) => state.accessToken)
@@ -25,6 +27,104 @@ const RecipeCard = ({ recipe, onRecipeUpdate, currentUser }) => {
   const [isRating, setIsRating] = useState(false)
   const [selectedRating, setSelectedRating] = useState(0)
   const navigate = useNavigate()
+  
+  // Follow/Unfollow states
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [isFollowLoading, setIsFollowLoading] = useState(false)
+  const [chefProfile, setChefProfile] = useState(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+
+  // Fetch chef profile on component mount
+  useEffect(() => {
+    if (recipe.user?.id) {
+      fetchChefProfile()
+    }
+  }, [recipe.user?.id])
+
+  const fetchChefProfile = async () => {
+    try {
+      const response = await axios.get(`http://127.0.0.1:8000/api/auth/users/${recipe.user.id}/`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+      setChefProfile(response.data)
+
+      // Check if current user is following this chef
+      if (currentUser) {
+        const isCurrentlyFollowing = response.data.followers.some(
+          (follower) => follower.follower === currentUser.id
+        )
+        setIsFollowing(isCurrentlyFollowing)
+      }
+    } catch (error) {
+      console.error("Error fetching chef profile:", error)
+    } finally {
+      setIsLoadingProfile(false)
+    }
+  }
+
+  const handleFollow = async () => {
+    if (!chefProfile || isFollowLoading || !accessToken) {
+      if (!accessToken) {
+        showWarning("Please log in to follow chefs")
+      }
+      return
+    }
+
+    setIsFollowLoading(true)
+    try {
+      if (isFollowing) {
+        // Unfollow
+        await axios.delete(
+          `http://127.0.0.1:8000/api/auth/unfollow/${chefProfile.id}/`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
+        setIsFollowing(false)
+        // Update follower count optimistically
+        setChefProfile((prev) => ({
+          ...prev,
+          follower_count: prev.follower_count - 1,
+        }))
+        showSuccess("Unfollowed successfully")
+      } else {
+        // Follow
+        await axios.post(
+          `http://127.0.0.1:8000/api/auth/follow/${chefProfile.id}/`,
+          { following: chefProfile.id },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          },
+        )
+        setIsFollowing(true)
+        // Update follower count optimistically
+        setChefProfile((prev) => ({
+          ...prev,
+          follower_count: prev.follower_count + 1,
+        }))
+        showSuccess("Following successfully! 👨‍🍳")
+      }
+    } catch (error) {
+      console.error("Error following/unfollowing:", error)
+      if (error.response?.status === 401) {
+        showError("Session expired. Please log in again.")
+        useAuthStore.getState().clearTokens()
+      } else {
+        showError("Failed to update follow status. Please try again.")
+      }
+    } finally {
+      setIsFollowLoading(false)
+    }
+  }
 
   const handleRecipeClick = () => {
     navigate(`/post/${recipe.id}`)
@@ -496,15 +596,78 @@ const RecipeCard = ({ recipe, onRecipeUpdate, currentUser }) => {
         </div>
 
         <div className="p-6 flex-1 flex flex-col justify-between">
-          <div className="flex items-center gap-3 mb-4">
-            <img
-              src={recipe.user.profile_picture || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
-              alt="Chef"
-              className="w-9 h-9 rounded-full object-cover border-2 border-white cursor-pointer shadow"
-            />
-            <span className="font-semibold text-gray-800 text-sm">{recipe.user.full_name || recipe.user.username}</span>
-            <span className="text-gray-500 text-xs flex items-center gap-1">
-              {formatTime(recipe.estimated_time)} • {recipe.servings || 1} servings
+          {/* Chef Profile Section with Follow Button */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <img
+                src={recipe.user.profile_picture || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"}
+                alt="Chef"
+                className="w-9 h-9 rounded-full object-cover border-2 border-white cursor-pointer shadow"
+              />
+              <div>
+                <span className="font-semibold text-gray-800 text-sm block">
+                  {recipe.user.username}
+                </span>
+                {chefProfile && (
+                  <span className="text-xs text-gray-500">
+                    {chefProfile.follower_count} followers
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Follow/Unfollow Button */}
+            {currentUser?.id !== recipe.user?.id && (
+              <button
+                onClick={handleFollow}
+                disabled={isFollowLoading || !accessToken}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 shadow-sm ${
+                  isFollowing
+                    ? "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-300"
+                    : "bg-gradient-to-r from-red-500 to-orange-500 text-white hover:opacity-90 shadow-md"
+                } ${isFollowLoading || !accessToken ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {isFollowLoading ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                ) : isFollowing ? (
+                  <>
+                    <SlUserUnfollow className="text-xs" />
+                    <span>Following</span>
+                  </>
+                ) : (
+                  <>
+                    <SlUserFollow className="text-xs" />
+                    <span>Follow</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Serving and Time Info */}
+          <div className="flex items-center gap-4 mb-4 text-gray-500 text-xs">
+            <span className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              {formatTime(recipe.estimated_time)}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              {recipe.servings || 1} servings
             </span>
           </div>
 
@@ -523,7 +686,9 @@ const RecipeCard = ({ recipe, onRecipeUpdate, currentUser }) => {
               </span>
             )}
             {recipe.ingredients && (
-              <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-medium">{recipe.category?.name || 'Not mentioned'}</span>
+              <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-medium">
+                {recipe.category?.name || 'Not mentioned'}
+              </span>
             )}
           </div>
 

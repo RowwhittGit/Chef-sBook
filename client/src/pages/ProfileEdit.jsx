@@ -5,6 +5,7 @@ import axios from 'axios'
 
 function ProfileEdit() {
   const accessToken = useAuthStore((state) => state.accessToken)
+  const [userId, setUserId] = useState(null)
   const [form, setForm] = useState({
     username: '',
     email: '',
@@ -17,14 +18,34 @@ function ProfileEdit() {
   const [success, setSuccess] = useState(null)
   const fileInputRef = useRef()
 
+  // Cloudinary upload function
+  const uploadToCloudinary = async (file) => {
+    const data = new FormData()
+    data.append('file', file)
+    data.append('upload_preset', 'rohit_test')
+    data.append('cloud_name', 'dpcux5ovk')
+
+    try {
+      const res = await fetch('https://api.cloudinary.com/v1_1/dpcux5ovk/image/upload', {
+        method: 'POST',
+        body: data,
+      })
+      const json = await res.json()
+      return json.secure_url
+    } catch (err) {
+      console.error('Cloudinary upload error:', err)
+      throw err
+    }
+  }
+
   useEffect(() => {
-    // Fetch current user data to prefill form
     const fetchProfile = async () => {
       if (!accessToken) return
       try {
         const res = await axios.get('http://127.0.0.1:8000/api/auth/me/', {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
+        setUserId(res.data.id)
         setForm({
           username: res.data.username || '',
           email: res.data.email || '',
@@ -39,15 +60,20 @@ function ProfileEdit() {
     fetchProfile()
   }, [accessToken])
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value, files } = e.target
     if (name === 'profilePicture' && files.length > 0) {
       const file = files[0]
-      setForm((prev) => ({
-        ...prev,
-        profile_picture: URL.createObjectURL(file),
-        profilePictureFile: file,
-      }))
+      try {
+        const uploadedUrl = await uploadToCloudinary(file)
+        setForm((prev) => ({
+          ...prev,
+          profile_picture: uploadedUrl,
+          profilePictureFile: file,
+        }))
+      } catch (error) {
+        setError('Failed to upload image.')
+      }
     } else {
       setForm((prev) => ({ ...prev, [name]: value }))
     }
@@ -58,27 +84,39 @@ function ProfileEdit() {
     setLoading(true)
     setError(null)
     setSuccess(null)
+
+    if (!userId) {
+      setError('User ID not found.')
+      setLoading(false)
+      return
+    }
+
     try {
-      const data = new FormData()
-      data.append('username', form.username)
-      data.append('email', form.email)
-      data.append('full_name', form.full_name)
-      if (form.profilePictureFile) {
-        data.append('profile_picture', form.profilePictureFile)
-      }
       await axios.patch(
-        'http://127.0.0.1:8000/api/auth/profile/update/',
-        data,
+        `http://127.0.0.1:8000/api/auth/users/${userId}/update/`,
+        {
+          email: form.email,
+          full_name: form.full_name,
+          profile_picture: form.profile_picture,
+          is_premium: false,
+        },
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'multipart/form-data',
           },
         }
       )
       setSuccess('Profile updated successfully!')
     } catch (err) {
-      setError('Failed to update profile.')
+      if (err.response && err.response.data) {
+        setError(
+          typeof err.response.data === 'string'
+            ? err.response.data
+            : JSON.stringify(err.response.data)
+        )
+      } else {
+        setError('Failed to update profile.')
+      }
     } finally {
       setLoading(false)
     }
@@ -92,9 +130,7 @@ function ProfileEdit() {
           <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 border border-white/20 relative overflow-hidden">
             <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500"></div>
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                Edit Profile
-              </h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">Edit Profile</h2>
               <p className="text-gray-600 text-lg">Update your details below</p>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -124,24 +160,22 @@ function ProfileEdit() {
                   onChange={handleChange}
                 />
               </div>
+
+              {/* Username - disabled field */}
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Username
-                </label>
+                <label className="block text-gray-700 font-semibold mb-2">Username</label>
                 <input
                   type="text"
                   name="username"
-                  placeholder="Username"
                   value={form.username}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  disabled
+                  className="w-full px-4 py-3 border border-orange-200 bg-gray-100 text-gray-600 rounded-md cursor-not-allowed"
                 />
+                <p className="text-sm text-gray-500 mt-1">Username cannot be changed.</p>
               </div>
+
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Email
-                </label>
+                <label className="block text-gray-700 font-semibold mb-2">Email</label>
                 <input
                   type="email"
                   name="email"
@@ -152,10 +186,9 @@ function ProfileEdit() {
                   className="w-full px-4 py-3 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
+
               <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  Full Name
-                </label>
+                <label className="block text-gray-700 font-semibold mb-2">Full Name</label>
                 <input
                   type="text"
                   name="full_name"
@@ -165,6 +198,7 @@ function ProfileEdit() {
                   className="w-full px-4 py-3 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
+
               <button
                 type="submit"
                 className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:opacity-90 text-white font-semibold py-2 rounded-md transition duration-300"
@@ -172,12 +206,9 @@ function ProfileEdit() {
               >
                 {loading ? 'Updating...' : 'Update Profile'}
               </button>
-              {error && (
-                <div className="text-red-600 text-center mt-2">{error}</div>
-              )}
-              {success && (
-                <div className="text-green-600 text-center mt-2">{success}</div>
-              )}
+
+              {error && <div className="text-red-600 text-center mt-2">{error}</div>}
+              {success && <div className="text-green-600 text-center mt-2">{success}</div>}
             </form>
           </div>
         </div>
@@ -187,3 +218,4 @@ function ProfileEdit() {
 }
 
 export default ProfileEdit
+ 
