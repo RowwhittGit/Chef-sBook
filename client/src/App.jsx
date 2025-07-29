@@ -11,6 +11,7 @@ import Notifications from './pages/Notifications'
 import ViewPost from './pages/ViewPost' 
 import ViewPost2 from './pages/ViewPost2'
 import ProfileEdit from './pages/ProfileEdit'
+import UpdatePost from './pages/UpdatePost'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
       <Route path='/post/:id' element={<ViewPost />} /> 
       {/* <Route path='/viewpost' element={<ViewPost2 />} /> */}
       <Route path='/edit_profile' element={<ProfileEdit />} />
+      <Route path='/post/update/:id' element={<UpdatePost />} /> 
     </Routes>
     
   )
