@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import axios from "axios"
 import Header from "../components/Header"
 import useCategoryStore from "../stores/categoryStore"
@@ -12,7 +12,8 @@ import ToastContainer from "../components/ToastContainer"
 
 function Home() {
   const selectedCategory = useCategoryStore((state) => state.selectedCategory)
-  const [recipes, setRecipes] = useState([])
+  const clearSelectedCategory = useCategoryStore((state) => state.clearSelectedCategory)
+  const [allRecipes, setAllRecipes] = useState([]) // Store ALL recipes
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pagination, setPagination] = useState({
@@ -23,6 +24,17 @@ function Home() {
 
   const { user: currentUser, fetchProfile } = useProfileStore()
   const accessToken = useAuthStore((state) => state.accessToken)
+
+  // Filter recipes based on selected category
+  const filteredRecipes = useMemo(() => {
+    if (!selectedCategory || selectedCategory === "All") {
+      return allRecipes // Show all recipes if no filter or "All" selected
+    }
+    
+    return allRecipes.filter(recipe => 
+      recipe.category && recipe.category.name === selectedCategory
+    )
+  }, [allRecipes, selectedCategory])
 
   useEffect(() => {
     if (accessToken && !currentUser) {
@@ -55,7 +67,7 @@ function Home() {
           is_saved: savedPostIds.includes(recipe.id),
         }))
 
-        setRecipes(updatedRecipes)
+        setAllRecipes(updatedRecipes) // Store all recipes
         setPagination({
           count: postData.count,
           next: postData.next,
@@ -70,11 +82,11 @@ function Home() {
     }
 
     getData()
-  }, [selectedCategory, accessToken])
+  }, [accessToken]) // Remove selectedCategory from dependency array
 
   const handleRecipeUpdate = (updatedRecipe) => {
     console.log("Updating recipe:", updatedRecipe)
-    setRecipes((prevRecipes) =>
+    setAllRecipes((prevRecipes) =>
       prevRecipes.map((recipe) =>
         recipe.id === updatedRecipe.id ? updatedRecipe : recipe
       )
@@ -82,7 +94,7 @@ function Home() {
   }
 
   const loadMoreRecipes = async () => {
-    if (!pagination.next) return
+    if (!pagination.next || (selectedCategory && selectedCategory !== "All")) return // Don't load more when filtering
 
     try {
       const [nextPostsRes, savedResponse] = await Promise.all([
@@ -103,7 +115,7 @@ function Home() {
         is_saved: savedPostIds.includes(recipe.id),
       }))
 
-      setRecipes((prevRecipes) => [...prevRecipes, ...newRecipes])
+      setAllRecipes((prevRecipes) => [...prevRecipes, ...newRecipes])
       setPagination({
         count: nextPostsRes.data.count,
         next: nextPostsRes.data.next,
@@ -153,22 +165,45 @@ function Home() {
 
       <div className="max-w-full mx-auto mt-8">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Discover Amazing Recipes</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            {selectedCategory && selectedCategory !== "All" ? `${selectedCategory} Recipes` : "Discover Amazing Recipes"}
+          </h2>
           <p className="text-gray-600">
-            Showing {recipes.length} of {pagination.count} recipes
+            Showing {filteredRecipes.length} of {selectedCategory && selectedCategory !== "All" ? filteredRecipes.length : pagination.count} recipes
+            {selectedCategory && selectedCategory !== "All" && (
+              <span className="text-orange-600 font-medium"> in {selectedCategory}</span>
+            )}
           </p>
         </div>
 
-        {recipes.length === 0 ? (
+        {filteredRecipes.length === 0 ? (
           <div className="text-center text-gray-500 py-20">
             <div className="text-6xl mb-4">🍳</div>
-            <h3 className="text-xl font-semibold mb-2">No recipes found</h3>
-            <p className="text-gray-400">Try adjusting your filters or check back later for new recipes.</p>
+            <h3 className="text-xl font-semibold mb-2">
+              {selectedCategory && selectedCategory !== "All"
+                ? `No ${selectedCategory} recipes found`
+                : "No recipes found"
+              }
+            </h3>
+            <p className="text-gray-400">
+              {selectedCategory && selectedCategory !== "All"
+                ? `We don't have any ${selectedCategory} recipes yet. Try exploring other categories!`
+                : "Try adjusting your filters or check back later for new recipes."
+              }
+            </p>
+            {selectedCategory && selectedCategory !== "All" && (
+              <button
+                onClick={clearSelectedCategory}
+                className="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                View All Recipes
+              </button>
+            )}
           </div>
         ) : (
           <>
             <div className="flex flex-wrap gap-8 justify-center">
-              {recipes.map((recipe) => (
+              {filteredRecipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
@@ -178,7 +213,8 @@ function Home() {
               ))}
             </div>
 
-            {pagination.next && (
+            {/* Hide load more button when filtering since we show all matching results */}
+            {(!selectedCategory || selectedCategory === "All") && pagination.next && (
               <div className="text-center mt-12">
                 <button
                   onClick={loadMoreRecipes}
