@@ -79,7 +79,7 @@ function Followers() {
           className="bg-white rounded-lg shadow-md p-4 flex items-center gap-4 hover:shadow-lg transition"
         >
           <img
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face"
+            src="https://thumbs.dreamstime.com/b/default-avatar-profile-icon-vector-social-media-user-image-182145777.jpg"
             alt={relationship.follower_username}
             className="w-12 h-12 rounded-full object-cover cursor-pointer"
             onClick={() => navigate(`/profile/${relationship.follower_username}`)}

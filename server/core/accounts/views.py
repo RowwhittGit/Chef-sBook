@@ -261,3 +261,18 @@ class ResetPasswordView(APIView):
             serializer.save()
             return Response({"message": "Password reset successful."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class GetAllPremiumUsers(APIView):
+    permission_classes = [permissions.IsAuthenticated]  # Require login
+
+    def get(self, request):
+        if not request.user.is_premium:
+            return Response(
+                {"detail": "Access denied. Premium users only."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        users = User.objects.filter(is_premium=True)
+        serializer = AdminUserSerializer(users, many=True)
+        return Response(serializer.data)

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuthStore from '../stores/authStore';
 import useNotificationStore from '../stores/notificationStore';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationDropdown = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Global');
   const [notifications, setNotifications] = useState({
     Global: [],
@@ -15,7 +17,14 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
   const [error, setError] = useState(null);
   
   const accessToken = useAuthStore((state) => state.accessToken);
-  const { fetchNotifications, notifications: sentNotifications } = useNotificationStore();
+  
+  // Subscribe to the notification store
+  const { 
+    fetchNotifications, 
+    notifications: sentNotifications, 
+    loading: sentLoading,
+    error: sentError 
+  } = useNotificationStore();
 
   const tabs = [
     { id: 'Global', label: 'Global', count: notifications.Global.length },
@@ -43,10 +52,30 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
     return deduplicated;
   };
 
+  // Separate effect for sent notifications to ensure proper subscription
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Fetch sent notifications when dropdown opens
+    fetchNotifications();
+  }, [isOpen, fetchNotifications]);
+
+  // Update sent notifications when store changes
+  useEffect(() => {
+    if (sentNotifications && sentNotifications.length >= 0) {
+      const transformedSent = sentNotifications.map(transformNotification);
+      
+      setNotifications(prev => ({
+        ...prev,
+        Sent: transformedSent
+      }));
+    }
+  }, [sentNotifications]);
+
   useEffect(() => {
     if (!isOpen) return;
 
-    const fetchAllNotifications = async () => {
+    const fetchOtherNotifications = async () => {
       setLoading(true);
       setError(null);
 
@@ -68,22 +97,12 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        // Fetch Sent Notifications using the store
-        await fetchNotifications();
-        const sentNotifs = sentNotifications.map(notification => ({
-          ...notification,
-          sender: {
-            username: "You",
-            profile_picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-          }
-        }));
-
-        setNotifications({
+        setNotifications(prev => ({
+          ...prev,
           Global: dedupGlobal.map(transformNotification),
           Following: dedupFollowing.map(transformNotification),
-          Personal: personalRes.data.results.map(transformNotification),
-          Sent: sentNotifs.map(transformNotification)
-        });
+          Personal: personalRes.data.results.map(transformNotification)
+        }));
       } catch (err) {
         setError('Failed to fetch notifications');
         console.error('Error fetching notifications:', err);
@@ -92,8 +111,8 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
       }
     };
 
-    fetchAllNotifications();
-  }, [isOpen, accessToken, fetchNotifications, sentNotifications]);
+    fetchOtherNotifications();
+  }, [isOpen, accessToken]);
 
   const transformNotification = (notification) => {
     return {
@@ -122,17 +141,17 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
 
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'like': return '❤️';
-      case 'comment': return '💬';
-      case 'follow': return '👤';
-      case 'recipe': return '📖';
-      case 'share': return '🔄';
       case 'global': return '🌍';
       case 'personal': return '👤';
       case 'sent': return '✉️';
+      case 'followers': return '👥';
       default: return '🔔';
     }
   };
+
+  // Combine loading states
+  const isLoading = loading || sentLoading;
+  const hasError = error || sentError;
 
   if (!isOpen) return null;
 
@@ -140,8 +159,11 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
     <>
       <div className="fixed inset-0 z-40" onClick={onClose}></div>
       
-      <div className="absolute right-0 top-full mt-2 w-[480px] bg-white rounded-lg shadow-2xl border border-gray-200 z-50 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-yellow-50">
+      {/* Main container with fixed height and flex column layout */}
+      <div className="absolute right-0 top-full mt-2 w-[480px] bg-white rounded-lg shadow-2xl border border-gray-200 z-50 overflow-hidden flex flex-col" style={{ height: '600px' }}>
+        
+        {/* Header - fixed height */}
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-yellow-50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
             <button 
@@ -153,7 +175,8 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        <div className="flex bg-gray-50 border-b border-gray-200">
+        {/* Tabs - fixed height */}
+        <div className="flex bg-gray-50 border-b border-gray-200 flex-shrink-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -178,17 +201,26 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
           ))}
         </div>
 
-        <div className="max-h-[500px] overflow-y-auto">
-          {loading ? (
-            <div className="p-8 text-center">
+        {/* Scrollable content area - takes remaining space */}
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="h-full flex flex-col items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500 mx-auto"></div>
               <p className="mt-4 text-gray-600">Loading notifications...</p>
             </div>
-          ) : error ? (
-            <div className="p-8 text-center">
+          ) : hasError ? (
+            <div className="h-full flex flex-col items-center justify-center p-4">
               <div className="text-4xl mb-3">⚠️</div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">Error loading notifications</h4>
-              <p className="text-gray-500 text-sm">{error}</p>
+              <p className="text-gray-500 text-sm">{hasError}</p>
+              {activeTab === 'Sent' && (
+                <button 
+                  onClick={() => fetchNotifications()}
+                  className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Retry
+                </button>
+              )}
             </div>
           ) : notifications[activeTab]?.length > 0 ? (
             <div className="divide-y divide-gray-100">
@@ -203,6 +235,9 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                         src={notification.avatar}
                         alt={notification.user}
                         className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                        onError={(e) => {
+                          e.target.src = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                        }}
                       />
                       <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md">
                         <span className="text-xs">{getNotificationIcon(notification.type)}</span>
@@ -219,7 +254,7 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
                           className="text-xs text-blue-500 hover:text-blue-700 hover:underline"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          View post
+                          {notification.url}
                         </a>
                       )}
                       {notification.recipientCount > 0 && activeTab === 'Sent' && (
@@ -239,21 +274,32 @@ const NotificationDropdown = ({ isOpen, onClose }) => {
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center">
-              <div className="text-4xl mb-3">🔔</div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No notifications yet</h4>
-              <p className="text-gray-500 text-sm">When you get notifications, they'll show up here.</p>
+            <div className="h-full flex flex-col items-center justify-center p-4">
+              <div className="text-4xl mb-3">
+                {activeTab === 'Sent' ? '📤' : '🔔'}
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">
+                {activeTab === 'Sent' ? 'No sent notifications' : 'No notifications yet'}
+              </h4>
+              <p className="text-gray-500 text-sm">
+                {activeTab === 'Sent' 
+                  ? 'Notifications you send will appear here.' 
+                  : 'When you get notifications, they\'ll show up here.'
+                }
+              </p>
             </div>
           )}
         </div>
 
-        {notifications[activeTab]?.length > 0 && (
-          <div className="p-3 bg-gray-50 border-t border-gray-200">
-            <button className="w-full text-center text-sm font-medium text-red-600 hover:text-red-700 transition-colors cursor-pointer">
-              Make a notification
-            </button>
-          </div>
-        )}
+        {/* Footer - fixed height */}
+        <div className="p-3 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+          <button 
+            className="w-full text-center text-sm font-medium text-red-600 hover:text-red-700 transition-colors cursor-pointer" 
+            onClick={() => navigate('/notifications/send')}
+          >
+            Make a notification
+          </button>
+        </div>
       </div>
     </>
   );

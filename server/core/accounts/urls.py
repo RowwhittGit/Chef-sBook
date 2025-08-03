@@ -11,7 +11,7 @@ from .views import (
     MyFollowingListView,
     AdminUserListView, UserRegisterView, AdminUserDetailView, UserUpdateView,
     AdminUserDeleteView, AdminUserPromotePremiumView, AdminUserDemotePremiumView,
-    ForgotPasswordView, ResetPasswordView
+    ForgotPasswordView, ResetPasswordView, GetAllPremiumUsers
 )
 
 urlpatterns = [
@@ -43,4 +43,5 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot-password'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
+    path('users/premium/', GetAllPremiumUsers.as_view(), name='get-premium-users')
 ]
