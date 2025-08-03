@@ -264,7 +264,7 @@ class ResetPasswordView(APIView):
     
 
 class GetAllPremiumUsers(APIView):
-    permission_classes = [permissions.IsAuthenticated]  # Require login
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         if not request.user.is_premium:
@@ -273,6 +273,6 @@ class GetAllPremiumUsers(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        users = User.objects.filter(is_premium=True)
+        users = User.objects.filter(is_premium=True).exclude(id=request.user.id)
         serializer = AdminUserSerializer(users, many=True)
         return Response(serializer.data)
