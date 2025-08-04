@@ -39,7 +39,7 @@ function Header() {
 
         <div className="text-center mt-2 flex-1">
           <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 font-pacifico mb-2">Chef'sBook</h1>
-          <p className="text-gray-600 text-lg">Start your culinary journey</p>
+          <p className="text-gray-600 text-lg">A social media platform for authentic recipes passed down through generations</p>
         </div>
 
         <div className='flex gap-4 sm:gap-6 items-center mt-2'>

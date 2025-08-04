@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import useAuthStore from "../stores/authStore";
+import { jwtDecode } from "jwt-decode";
 
 const Msg = () => {
   const [users, setUsers] = useState([]);
@@ -9,7 +10,9 @@ const Msg = () => {
   const [input, setInput] = useState("");
   const wsRef = useRef(null);
 
-  const accessToken = useAuthStore((state) => state.accessToken)
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const decoded = jwtDecode(accessToken);
+  const currentUserId = decoded.user_id || decoded.id; // Current user's ID
 
   // 1. Fetch user list
   useEffect(() => {
@@ -19,13 +22,15 @@ const Msg = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const data = await res.json();
-        setUsers(data);
+        // Filter out current user from the list
+        const filteredUsers = data.filter(user => user.id !== currentUserId);
+        setUsers(filteredUsers);
       } catch (err) {
         console.error("Failed to fetch users", err);
       }
     };
     fetchUsers();
-  }, []);
+  }, [currentUserId]);
 
   // 2. Handle clicking on a user
   const handleUserClick = async (user) => {
@@ -50,7 +55,7 @@ const Msg = () => {
       });
 
       const roomData = await roomRes.json();
-      console.log(roomData)
+      console.log(roomData);
       const room = roomData.room_name;
       setRoomName(room);
 
@@ -65,6 +70,7 @@ const Msg = () => {
       );
       const messageData = await messageRes.json();
       setMessages(messageData);
+      console.log(messageData);
 
       // Step 3: Connect WebSocket
       const socket = new WebSocket(
@@ -73,7 +79,27 @@ const Msg = () => {
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        setMessages((prev) => [...prev, data]);
+        console.log("WebSocket message received:", data);
+        
+        // Handle different WebSocket message formats
+        let newMessage;
+        if (data.type === 'chat_message' && data.message) {
+          // If the message is wrapped in a type structure
+          newMessage = data.message;
+        } else if (data.message) {
+          // If it's a direct message object
+          newMessage = {
+            message: data.message,
+            sender: data.sender || currentUserId, // Fallback to current user if sender not provided
+            timestamp: data.timestamp || new Date().toISOString(),
+            // Add other fields as needed
+          };
+        } else {
+          // If it's just the raw data
+          newMessage = data;
+        }
+        
+        setMessages((prev) => [...prev, newMessage]);
       };
 
       socket.onopen = () => {
@@ -97,7 +123,9 @@ const Msg = () => {
     if (!input.trim() || !wsRef.current || wsRef.current.readyState !== 1)
       return;
 
+    console.log(JSON.stringify({ message: input }));
     wsRef.current.send(JSON.stringify({ message: input }));
+    
     setInput("");
   };
 
@@ -117,7 +145,8 @@ const Msg = () => {
                 selectedUser?.id === user.id ? "bg-blue-100" : ""
               }`}
             >
-              {user.username}
+              <div className="font-medium">{user.username}</div>
+              <div className="text-sm text-gray-500">{user.email}</div>
             </div>
           ))
         )}
@@ -128,28 +157,39 @@ const Msg = () => {
         {selectedUser ? (
           <>
             <div className="p-4 border-b font-semibold bg-white">
-              Chat with {selectedUser.name}
+              Chat with {selectedUser.username}
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-2 bg-gray-50">
               {messages.length === 0 ? (
                 <div className="text-sm text-gray-500">No messages yet</div>
               ) : (
-                messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`max-w-xs px-3 py-2 rounded shadow ${
-                      msg.sender_username === selectedUser.username
-                        ? "bg-gray-300"
-                        : "bg-blue-500 text-white self-end ml-auto"
-                    }`}
-                  >
-                    {msg.message}
-                    <div className="text-xs text-right text-gray-600">
-                      {new Date(msg.timestamp).toLocaleTimeString()}
+                messages.map((msg, idx) => {
+                  // Check if message is from current user or receiver
+                  const isFromCurrentUser = msg.sender === currentUserId;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex ${isFromCurrentUser ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs px-3 py-2 rounded shadow ${
+                          isFromCurrentUser
+                            ? "bg-blue-500 text-white" // Current user's messages (blue, right side)
+                            : "bg-gray-300 text-black"  // Receiver's messages (gray, left side)
+                        }`}
+                      >
+                        <div>{msg.message}</div>
+                        <div className={`text-xs text-right mt-1 ${
+                          isFromCurrentUser ? 'text-blue-100' : 'text-gray-600'
+                        }`}>
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -163,7 +203,7 @@ const Msg = () => {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 onClick={handleSend}
               >
                 Send
